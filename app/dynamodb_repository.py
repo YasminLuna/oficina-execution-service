@@ -14,7 +14,7 @@ class DynamoExecutionRepository:
     def from_environment(cls):
         table_name = os.environ["EXECUTION_TABLE_NAME"]
         import boto3
-        return cls(boto3.resource("dynamodb").Table(table_name))
+        return cls(boto3.resource("dynamodb", endpoint_url=os.getenv("DYNAMODB_ENDPOINT_URL"), region_name=os.getenv("AWS_DEFAULT_REGION", "us-east-1")).Table(table_name))
 
     def create(self, order_id: str) -> dict:
         if not order_id:
