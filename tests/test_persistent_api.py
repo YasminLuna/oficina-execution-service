@@ -31,3 +31,21 @@ def test_dynamo_api_blank_diagnosis(monkeypatch):
     monkeypatch.setattr(api, "repository", lambda: repo)
     assert TestClient(api.app).post("/work-items/os-1/complete", json={"description": " "}).status_code == 422
     repo.transition.assert_not_called()
+
+
+def test_dynamo_api_health_and_cancel(monkeypatch):
+    repo = Mock()
+    repo.transition.return_value = {"order_id": "os-1", "state": "CANCELLED"}
+    monkeypatch.setattr(api, "repository", lambda: repo)
+    client = TestClient(api.app)
+    assert client.get("/health").json() == {"status": "ok"}
+    assert client.post("/work-items/os-1/cancel").json()["state"] == "CANCELLED"
+    repo.transition.assert_called_with("os-1", "QUEUED", "CANCELLED")
+
+
+def test_dynamo_api_rejects_empty_id(monkeypatch):
+    repo = Mock()
+    monkeypatch.setattr(api, "repository", lambda: repo)
+    client = TestClient(api.app)
+    assert client.post("/work-items", json={"order_id": ""}).status_code == 422
+    repo.create.assert_not_called()
