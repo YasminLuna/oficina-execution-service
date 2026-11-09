@@ -21,6 +21,8 @@ spec:
         ports:
         - containerPort: 8080
         env:
+        - name: EXECUTION_TABLE_NAME
+          value: oficina-execution-local
         - name: DYNAMODB_ENDPOINT_URL
           value: http://dynamodb-local:8000
         - name: AWS_ACCESS_KEY_ID
