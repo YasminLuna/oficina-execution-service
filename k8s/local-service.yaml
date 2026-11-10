@@ -1,0 +1,63 @@
+# Local-only manifests. Load images into kind/minikube before applying.
+# External dependencies (PostgreSQL, DynamoDB Local) must be configured separately.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oficina-execution-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: oficina-execution-service
+  template:
+    metadata:
+      labels:
+        app: oficina-execution-service
+    spec:
+      containers:
+      - name: app
+        image: oficina-execution-service:local
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080
+        env:
+        - name: EXECUTION_TABLE_NAME
+          value: oficina-execution-local
+        - name: DYNAMODB_ENDPOINT_URL
+          value: http://dynamodb-local:8000
+        - name: AWS_ACCESS_KEY_ID
+          value: local
+        - name: AWS_SECRET_ACCESS_KEY
+          value: local
+        - name: AWS_DEFAULT_REGION
+          value: us-east-1
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        resources:
+          requests:
+            cpu: 50m
+            memory: 96Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: oficina-execution-service
+spec:
+  selector:
+    app: oficina-execution-service
+  ports:
+  - port: 8080
+    targetPort: 8080
